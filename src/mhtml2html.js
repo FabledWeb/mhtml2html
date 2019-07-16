@@ -152,13 +152,17 @@ const mhtml2html = {
 
         // Splits headers from the first instance of ':'.
         function splitHeaders(line, obj) {
+            line = line.trim();
             let m;
             if ((m = line.indexOf(':')) > -1) {
                 key = line.substring(0, m).trim();
                 obj[key] = line.substring(m + 1, line.length).trim();
-            } else {
-                assert(typeof key !== 'undefined', `Missing MHTML headers; Line ${l}`);
-                obj[key] += line.trim();
+            }
+            else if ((m = line.indexOf('=')) > -1) {
+                key = line.substring(0, m).trim();
+                const reg = /= *"(.*)"/;
+                const result = line.trim().match(reg);
+                obj[key] = result[1];
             }
         }
 
@@ -173,18 +177,22 @@ const mhtml2html = {
                         splitHeaders(next, headers);
                     } else {
                         assert(typeof headers['Content-Type'] !== 'undefined', `Missing document content type; Line ${l}`);
-                        const matches = headers['Content-Type'].match(/boundary=(.*)/m);
+                        boundary = headers['boundary'];
 
-                        // Ensure the extracted boundary exists.
-                        assert(matches != null, `Missing boundary from document headers; Line ${l}`);
-                        boundary = matches[1].replace(/\"/g,'');
+                        if (!boundary) {
+                            var matches = headers['Content-Type'].match(/boundary=([^\n])/m);
+
+                            // Ensure the extracted boundary exists.
+                            assert(matches != null, 'Missing boundary from document headers; Line ' + l);
+                            boundary = matches[1].replace(/\"/g, '');
+                        }
 
                         trim();
                         next = getLine();
 
                         // Expect the next boundary to appear.
                         assert(next.includes(boundary), `Expected boundary; Line ${l}`);
-                        content = { };
+                        content = {};
                         state = MHTML_FSM.MTHML_CONTENT;
                     }
                     break;
@@ -203,6 +211,21 @@ const mhtml2html = {
                         type     = content['Content-Type'];
                         id       = content['Content-ID'];
                         location = content['Content-Location'];
+
+                        if (type) {
+                            const contentTypeParts = type.split(/ *; */);
+                            type = contentTypeParts[0];
+                            if (!encoding) {
+                                const charsetString = contentTypeParts.find(part => {
+                                    return part.includes('charset');
+                                });
+                                if (charsetString) {
+                                    const reg = /charset *= *"(.*)"/;
+                                    const result = charsetString.match(reg);
+                                    encoding = result[1];
+                                }
+                            }
+                        }
 
                         // Assume the first boundary to be the document.
                         if (typeof index === 'undefined') {
