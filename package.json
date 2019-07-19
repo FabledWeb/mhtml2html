@@ -6,7 +6,7 @@
     "type": "git",
     "url": "git+https://github.com/msindwan/mhtml2html.git"
   },
-  "main": "dist/mhtml2html.js",
+  "main": "src/mhtml2html.js",
   "bin": {
     "mhtml2html": "./index.js"
   },
