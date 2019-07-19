@@ -345,9 +345,9 @@ const mhtml2html = {
                 switch(child.tagName) {
                     case 'HEAD':
                          // Link targets should be directed to the outer frame.
-                        base = documentElem.createElement("base");
-                        base.setAttribute("target", "_parent");
-                        child.insertBefore(base, child.firstChild);
+                        // base = documentElem.createElement("base");
+                        // base.setAttribute("target", "_parent");
+                        // child.insertBefore(base, child.firstChild);
                         break;
 
                     case 'LINK':
